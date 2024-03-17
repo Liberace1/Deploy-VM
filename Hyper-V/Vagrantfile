@@ -1,0 +1,69 @@
+# Define the number of VMs to create
+NUM_VMS = 5
+
+Vagrant.configure("2") do |config|
+  config.vm.provider "hyperv"
+
+  (1..NUM_VMS).each do |i|
+    if i == 1
+      ip_address = "192.168.56.101" # Specific IP for VM1
+    else
+      ip_address = "192.168.56.#{101+i}" # Sequential IPs for other VMs
+    end
+
+    # Format VM name with "VM#!" prefix and the IP address
+    vm_name = "VM#{i}_#{ip_address.gsub('.', '-')}"
+
+    config.vm.define vm_name do |node|
+      node.vm.box = "generic/ubuntu1804"
+      
+      node.vm.provider "hyperv" do |v|
+        v.vmname = vm_name
+        v.memory = 2048
+        v.cpus = 2
+      end
+
+      node.vm.network "private_network", ip: ip_address, bridge: "Default Switch"
+
+      # Set the hostname of the VM to match its IP address
+      # In shell provisioning, use `hostnamectl` to set hostname dynamically based on IP
+      node.vm.provision "shell", inline: <<-SHELL
+        # Update and install necessary packages
+        sudo apt-get update && sudo apt-get install -y openssh-server apache2 curl
+
+        # Install Docker
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        sudo apt-get update && sudo apt-get install -y docker-ce
+
+        # Install Kubernetes CLI
+        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+        echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+        sudo apt-get update && sudo apt-get install -y kubectl
+
+        # User setup
+        sudo useradd -m -s /bin/bash ola || true
+        echo 'ola:ola' | sudo chpasswd
+        sudo useradd -m -s /bin/bash standard || true
+        echo 'standard:standard' | sudo chpasswd
+        echo 'ola ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/ola
+
+        # Setup SSH keys for 'ola'
+        sudo mkdir -p /home/ola/.ssh
+        sudo chmod 700 /home/ola/.ssh
+        sudo touch /home/ola/.ssh/authorized_keys
+        sudo chmod 600 /home/ola/.ssh/authorized_keys
+        echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDPpG4shjevNpoxJxgIYbUQbzzMAY70gtiioI/eI5MCUoDuaMhoVi0s1dVQ87TTJTUQkL59GHzKrc3DMK9XohG3lCnRMfWaeYXKekNuCRAk6vDyN25tZmAnBaanVxGJRnN8GhYF2Larnt/8zcuO3OxI+RstUcmNsje8ZA0jGT9xQFq38WthLWUkISVDrA+YtDQ4avC8VLSFZlVC7vDiNPwng/zkltPfnsrbst8znDA9Qdy5k+lwwQkcEW/gpsUY3xC/afoPEZk0YzHUYHSn2y+d5ZiV6EUsgQoAq1usyPWOMIavRrU1FB/ytvvQ/y7HP9lTJQhT6gO1j/U3NUVe4ayXUWfIlx4n5VQis23K6FjtYCFqVF4HH8tgBgkuEUGSUnk7xhGYQYqqJdlXf9RSsZndXXRpK+v/xgPTlf2txr9Vv1bripfQGcSvraDlYxWsXZDON8zXkNL5QVvnl55R2XonsV1bYzE28VRanfqpjCppKgpb2Tk+HLNMUOU4cuyY5JnsNLOJaS0tJErbVsfGmwaTmQEzYWrDeyw7WL5+dHlqEeo1NQQGKuZtfqq/YPXwl4L2mYJfKOh8L2eHTEIvJkGA5xZttQ3ZZLB7M2+a7VweBWRs4OKIxrOgZ/aqxHUbTd1cJ5/FHaW74J+SaT1OvUHMK0qhCVdTyFPv1lA/zqZzTQ==" | sudo tee -a /home/ola/.ssh/authorized_keys
+
+        # Dynamically set the hostname to the IP address
+        sudo hostnamectl set-hostname #{ip_address}
+
+        # Additional installations for the first VM
+        if [ "#{i}" = "1" ]; then
+          sudo apt-get install -y ansible terraform vagrant
+        fi
+      SHELL
+    end
+  end
+end
+

@@ -1,0 +1,50 @@
+# Define the number of VMs to create
+NUM_VMS = 3
+
+Vagrant.configure("2") do |config|
+  # Iterate to configure multiple VMs
+  (1..NUM_VMS).each do |i|
+    config.vm.define "Standard-VM-#{i}" do |node|
+      node.vm.box = "ubuntu/focal64"
+      node.vm.hostname = "Standard-VM-#{i}"
+
+      # VirtualBox specific configuration
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = "Standard-VM-#{i}"
+        vb.memory = "4096"
+        vb.cpus = 4
+      end
+
+      # First network adapter: Private network for inter-VM communication
+      node.vm.network "private_network", ip: "192.168.56.#{10+i}", virtualbox__intnet: true
+
+      # Second network adapter: Bridged network for VM-host communication
+      # Comment this line if you prefer host-only network
+      node.vm.network "public_network", bridge: "en0: Wi-Fi (AirPort)"
+      # Uncomment the following line for a host-only network instead of bridging
+      # node.vm.network "private_network", type: "dhcp"
+
+      # Provision Docker installation and user setup
+      node.vm.provision "shell", inline: <<-SHELL
+        sudo apt-get update
+        sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        sudo apt-get update
+        sudo apt-get install -y docker-ce
+        # Add vagrant user to the docker group to use Docker as a non-root user
+        sudo usermod -aG docker $USER
+        
+        # Create new users and set passwords
+        sudo useradd -m -s /bin/bash ola
+        echo "ola:ola" | sudo chpasswd
+        sudo useradd -m -s /bin/bash standard
+        echo "standard:standard" | sudo chpasswd
+        
+        # Give 'ola' user root privileges
+        echo 'ola ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/ola
+      SHELL
+    end
+  end
+end
+

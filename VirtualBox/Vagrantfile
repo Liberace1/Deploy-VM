@@ -1,0 +1,59 @@
+# Define the number of VMs to create
+NUM_VMS = 3
+
+Vagrant.configure("2") do |config|
+  # Iterate to configure multiple VMs
+  (1..NUM_VMS).each do |i|
+    config.vm.define "Standard-VM-#{i}" do |node|
+      node.vm.box = "ubuntu/focal64"
+      node.vm.hostname = "Standard-VM-#{i}"
+
+      # VirtualBox specific configuration
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = "Standard-VM-#{i}"
+        vb.memory = "4096"
+        vb.cpus = 4
+      end
+
+      # First network adapter: Private network for inter-VM communication
+      node.vm.network "private_network", ip: "192.168.56.#{10+i}", virtualbox__intnet: true
+
+      # Second network adapter: Bridged network for VM-host communication
+      node.vm.network "public_network", bridge: "en0: Wi-Fi (AirPort)"
+
+      # Provision Docker installation, user setup, and SSH configuration
+      node.vm.provision "shell", inline: <<-SHELL
+        # Update and upgrade the system
+        sudo apt-get update && sudo apt-get upgrade -y
+
+        # Install SSH server and Docker
+        sudo apt-get install -y openssh-server apt-transport-https ca-certificates curl software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        sudo apt-get update
+        sudo apt-get install -y docker-ce
+
+        # Add vagrant user to the docker group
+        sudo usermod -aG docker $USER
+
+        # Create new users and set passwords
+        sudo useradd -m -s /bin/bash ola
+        echo "ola:ola" | sudo chpasswd
+        sudo useradd -m -s /bin/bash standard
+        echo "standard:standard" | sudo chpasswd
+
+        # Give 'ola' user root privileges
+        echo 'ola ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/ola
+
+        # Setup SSH for ola with two keys: gitbash and mobaxterm
+        sudo mkdir -p /home/ola/.ssh
+        sudo chmod 700 /home/ola/.ssh
+        echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDPpG4shjevNpoxJxgIYbUQbzzMAY70gtiioI/eI5MCUoDuaMhoVi0s1dVQ87TTJTUQkL59GHzKrc3DMK9XohG3lCnRMfWaeYXKekNuCRAk6vDyN25tZmAnBaanVxGJRnN8GhYF2Larnt/8zcuO3OxI+RstUcmNsje8ZA0jGT9xQFq38WthLWUkISVDrA+YtDQ4avC8VLSFZlVC7vDiNPwng/zkltPfnsrbst8znDA9Qdy5k+lwwQkcEW/gpsUY3xC/afoPEZk0YzHUYHSn2y+d5ZiV6EUsgQoAq1usyPWOMIavRrU1FB/ytvvQ/y7HP9lTJQhT6gO1j/U3NUVe4ayXUWfIlx4n5VQis23K6FjtYCFqVF4HH8tgBgkuEUGSUnk7xhGYQYqqJdlXf9RSsZndXXRpK+v/xgPTlf2txr9Vv1bripfQGcSvraDlYxWsXZDON8zXkNL5QVvnl55R2XonsV1bYzE28VRanfqpjCppKgpb2Tk+HLNMUOU4cuyY5JnsNLOJaS0tJErbVsfGmwaTmQEzYWrDeyw7WL5+dHlqEeo1NQQGKuZtfqq/YPXwl4L2mYJfKOh8L2eHTEIvJkGA5xZttQ3ZZLB7M2+a7VweBWRs4OKIxrOgZ/aqxHUbTd1cJ5/FHaW74J+SaT1OvUHMK0qhCVdTyFPv1lA/zqZzTQ== olaliberace@gmail.com" | sudo tee /home/ola/.ssh/authorized_keys
+        echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC2vK6sLlWW4TsUCyXhnjTALtFFob1ztnxiwT0OecxaXBsfcp09GSRM6X9mvtoqS1OVAFuBWmKTZp1NRBkdKFNesmwUabMsbXj030RWMV3WHsICiZPw5TXxA/jourOBApnipKIfuVG9v9YDuAOt0zOUCr8/mCT1S1rcyAWp1/+dabvpxuf/uHmkeH6gzOWOkeEQeqcaWvD14jYT9w8PBdi81FWqNAaZxqd++O1oMXzcrAxkdgizuxDR2TWhrnkM2aZ+9keMC+CIhpYblKbc6EGUqYJalzSGWe9jHcdlud4QD02elQAlPDdv/Ds0MbakNKkgKZDYerAjSxLrJKothFpsqE5tiOJzm/VevNqWrjpNOZq3DBwQC5yr7ERosQYVCrFFDIRqMVsINooancyeoqzPrsAaUqX3KFwW56dVD5VS4BSpRyv5k1UX9xwE1iiT80rWy2hj0tOQ22ebveeQ5D7pJxngMRlWPscwsU1IiielrL0aII0XKWYHvLnf+cQF9AMIdETrBxLJIEg021S2x+fBa+MxYI+TmkjNTo2Kg0aD+xc0ikA5l+qKB/j9MhU4XvqjlTZi0yIL1Nlbz5FXfh8l2laXNEogP13k75x2o0/fRnyDm/eF4fM07mJ5gJshQT4scAmNNIRG3nYHY3xLEo8j4DYP51m32O8b9JHZ7vpU2w== olala@Ola-Lawrence" | sudo tee -a /home/ola/.ssh/authorized_keys
+        sudo chmod 600 /home/ola/.ssh/authorized_keys
+        sudo chown -R ola:ola /home/ola/.ssh
+      SHELL
+    end
+  end
+end
+
