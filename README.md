@@ -30,8 +30,8 @@ Each script dynamically creates VMs, configures them with a private network, ins
 
 1. **Clone the Repository**: Clone the GitHub repository containing the Vagrant scripts to your local machine.
     ```
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone https://github.com/Liberace1/Deploy-VM.git
+    cd Deploy-VM
     ```
 
 2. **Choose Your Provider**:
