@@ -37,12 +37,19 @@ Vagrant.configure("2") do |config|
         SSH_PRIVATE_KEY = "ssh-rsa AAAAB3NzaC1yghduisuoUGUIGUIF"  #Copy your own SSH key here or leave b;ank if you dont want ssh access
         #-------------------------------------------------------------------------------------------------------------------------------
         # User setup
-        sudo useradd -m -s /bin/bash $USER || true
-        echo '$USER:$USER' | sudo chpasswd
-        echo '$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/$USER
+      
+        # User setup for the variable $USER
+        sudo useradd -m -s /bin/bash "$USER" || true
+        echo "${USER}:${USER}" | sudo chpasswd
+        echo "${USER} ALL=(ALL) NOPASSWD:ALL" | sudo tee "/etc/sudoers.d/${USER}"
+        sudo chmod 0440 "/etc/sudoers.d/${USER}"
+        
+        # Setup for a user named 'standard'
         sudo useradd -m -s /bin/bash standard || true
-        echo 'standard:standard' | sudo chpasswd
-        echo 'standard ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/standard
+        echo "standard:standard" | sudo chpasswd
+        echo "standard ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/standard
+        sudo chmod 0440 /etc/sudoers.d/standard
+
 
 
         # Update and upgrade the system
