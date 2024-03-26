@@ -1,13 +1,12 @@
+#Set VM user varibale on shell section
+
 # Define the number of VMs to create
 NUM_VMS = 5
 #user default created
 #USERNAME: standard
 #PASSWORD: standard
 
-#create additional user and password
-USER = "ubuntu" #Change to name
-PASSWORD = "ubuntu" #Chnage to your password
-SSH_PRIVATE_KEY = "ssh-rsa AAAAB3NzaC1yghduisuoUGUIGUIF"  #Copy your own SSH key here or leave b;ank if you dont want ssh access
+
 Vagrant.configure("2") do |config|
   # Iterate to configure multiple VMs
   (1..NUM_VMS).each do |i|
@@ -30,6 +29,22 @@ Vagrant.configure("2") do |config|
 
       # Provision Docker installation, user setup, and SSH configuration
       node.vm.provision "shell", inline: <<-SHELL
+
+
+        #------------------------create additional user and password------------------------------------------------------------------
+        USER = "ubuntu" #Change to name
+        PASSWORD = "ubuntu" #Chnage to your password
+        SSH_PRIVATE_KEY = "ssh-rsa AAAAB3NzaC1yghduisuoUGUIGUIF"  #Copy your own SSH key here or leave b;ank if you dont want ssh access
+        #-------------------------------------------------------------------------------------------------------------------------------
+        # User setup
+        sudo useradd -m -s /bin/bash $USER || true
+        echo '$USER:$USER' | sudo chpasswd
+        echo '$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/$USER
+        sudo useradd -m -s /bin/bash standard || true
+        echo 'standard:standard' | sudo chpasswd
+        echo 'standard ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/standard
+
+
         # Update and upgrade the system
         sudo apt-get update && sudo apt-get upgrade -y
 
@@ -43,15 +58,7 @@ Vagrant.configure("2") do |config|
         # Add vagrant user to the docker group
         sudo usermod -aG docker $USER
 
-        # User setup
-        sudo useradd -m -s /bin/bash $USER || true
-        echo '$USER:$USER' | sudo chpasswd
-        echo '$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/$USER
-        sudo useradd -m -s /bin/bash standard || true
-        echo 'standard:standard' | sudo chpasswd
-        echo 'standard ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/standard
-
-        
+             
         # Setup SSH keys for '$USER'
         sudo mkdir -p /home/$USER/.ssh
         sudo chmod 700 /home/$USER/.ssh
