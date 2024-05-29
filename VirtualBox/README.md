@@ -22,7 +22,7 @@ The `Vagrantfile` defines a Vagrant environment with the following configuration
     - Run `vagrant up` to create and provision the VMs. Vagrant will automatically use VirtualBox as the provider.
 
 4. **Accessing VMs**:
-    - Use `vagrant ssh ubuntu-vm-1` (replace `1` with the appropriate VM number) to SSH into a VM.
+    - Use `vagrant ssh 'vm-name'` (run command without the quotes) to SSH into the VM.
     - The user `ola` can be accessed with SSH using the provided keys.
 
 5. **Stopping VMs**:
