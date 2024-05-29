@@ -1,10 +1,36 @@
-#Set VM user varibale on shell section
+# Set VM user variable on shell section
+# Must Edit the variables below to match your specified input
+
+#NUM_VMS
+#SHARED_FOLDER_PATH(Optional if you want VMs to have a shared folder, for exchanging files, Shared folder will be mounted as storage)
+#USER
+#PASSWORD
+#SSH_PRIVATE_KEY
 
 # Define the number of VMs to create
-NUM_VMS = 5
-#user default created
-#USERNAME: standard
-#PASSWORD: standard
+NUM_VMS = 1
+# user default created
+# USERNAME: standard,ola,vagrant
+# PASSWORD: standard,ola,vagrant
+
+
+#Shared Folder creation using ruby- Ensure you can send /receive files to VM 
+require 'fileutils'
+
+# Define the shared folder path relative to the Vagrantfile
+shared_folder_relative_path = "Shared_Folder"
+
+# Get the absolute path to the Vagrantfile's directory
+vagrantfile_dir = File.dirname(__FILE__)
+
+# Define the absolute shared folder path
+SHARED_FOLDER_PATH = File.join(vagrantfile_dir, shared_folder_relative_path)
+
+# Create the shared folder if it doesn't exist
+FileUtils.mkdir_p(SHARED_FOLDER_PATH) unless Dir.exist?(SHARED_FOLDER_PATH)
+
+
+
 
 
 Vagrant.configure("2") do |config|
@@ -19,61 +45,66 @@ Vagrant.configure("2") do |config|
         vb.name = "Standard-VM-#{i}"
         vb.memory = "4096"
         vb.cpus = 4
+        vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+        vb.customize ["modifyvm", :id, "--draganddrop", "bidirectional"]
       end
 
       # First network adapter: Private network for inter-VM communication
-      node.vm.network "private_network", ip: "192.168.56.#{10+i}", virtualbox__intnet: true
+      node.vm.network "private_network", ip: "192.168.56.#{10 + i}", virtualbox__intnet: true
 
       # Second network adapter: Bridged network for VM-host communication
       node.vm.network "public_network", bridge: "en0: Wi-Fi (AirPort)"
 
+      # Configure shared folder
+      node.vm.synced_folder SHARED_FOLDER_PATH, "/mnt/dev/storage"
+
       # Provision Docker installation, user setup, and SSH configuration
       node.vm.provision "shell", inline: <<-SHELL
-
-
         #------------------------create additional user and password------------------------------------------------------------------
-        USER = "ubuntu" #Change to name
-        PASSWORD = "ubuntu" #Chnage to your password
-        SSH_PRIVATE_KEY = "ssh-rsa AAAAB3NzaC1yghduisuoUGUIGUIF"  #Copy your own SSH key here or leave b;ank if you dont want ssh access
+        USER="ola" # Change to preferred username
+        PASSWORD="ola" # Change to your password
+        SSH_PRIVATE_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDPpG4shjevNpoxJxgIYbUQbzzMAY70gtiioI/eI5MCUoDuaMhoVi0s1dVQ87TTJTUQkL59GHzKrc3DMK9XohG3lCnRMfWaeYXKekNuCRAk6vDyN25tZmAnBaanVxGJRnN8GhYF2Larnt/8zcuO3OxI+RstUcmNsje8ZA0jGT9xQFq38WthLWUkISVDrA+YtDQ4avC8VLSFZlVC7vDiNPwng/zkltPfnsrbst8znDA9Qdy5k+lwwQkcEW/gpsUY3xC/afoPEZk0YzHUYHSn2y+d5ZiV6EUsgQoAq1usyPWOMIavRrU1FB/ytvvQ/y7HP9lTJQhT6gO1j/U3NUVe4ayXUWfIlx4n5VQis23K6FjtYCFqVF4HH8tgBgkuEUGSUnk7xhGYQYqqJdlXf9RSsZndXXRpK+v/xgPTlf2txr9Vv1bripfQGcSvraDlYxWsXZDON8zXkNL5QVvnl55R2XonsV1bYzE28VRanfqpjCppKgpb2Tk+HLNMUOU4cuyY5JnsNLOJaS0tJErbVsfGmwaTmQEzYWrDeyw7WL5+dHlqEeo1NQQGKuZtfqq/YPXwl4L2mYJfKOh8L2eHTEIvJkGA5xZttQ3ZZLB7M2+a7VweBWRs4OKIxrOgZ/aqxHUbTd1cJ5/FHaW74J+SaT1OvUHMK0qhCVdTyFPv1lA/zqZzTQ== olaliberace@gmail.com"
+        # Copy your own SSH key here or leave blank if you don't want SSH access
         #-------------------------------------------------------------------------------------------------------------------------------
-        # User setup
-      
         # User setup for the variable $USER
         sudo useradd -m -s /bin/bash "$USER" || true
         echo "${USER}:${USER}" | sudo chpasswd
-        echo "${USER} ALL=(ALL) NOPASSWD:ALL" | sudo tee "/etc/sudoers.d/${USER}"
-        sudo chmod 0440 "/etc/sudoers.d/${USER}"
-        
+        echo "${USER} ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/${USER}
+        sudo chmod 0440 /etc/sudoers.d/${USER}
+
         # Setup for a user named 'standard'
         sudo useradd -m -s /bin/bash standard || true
         echo "standard:standard" | sudo chpasswd
-        echo "standard ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/standard
+        echo "standard ALL=(ALL:ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/standard
         sudo chmod 0440 /etc/sudoers.d/standard
-
-
-
-        # Update and upgrade the system
-        sudo apt-get update && sudo apt-get upgrade -y
 
         # Install SSH server and Docker
         sudo apt-get install -y openssh-server apt-transport-https ca-certificates curl software-properties-common
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-        sudo apt-get update
-        sudo apt-get install -y docker-ce
 
-        # Add vagrant user to the docker group
-        sudo usermod -aG docker $USER
-
-             
         # Setup SSH keys for '$USER'
         sudo mkdir -p /home/$USER/.ssh
         sudo chmod 700 /home/$USER/.ssh
         sudo touch /home/$USER/.ssh/authorized_keys
         sudo chmod 600 /home/$USER/.ssh/authorized_keys
         echo "$SSH_PRIVATE_KEY" | sudo tee /home/$USER/.ssh/authorized_keys
+        sudo apt-get update
+
+        # Install VirtualBox Guest Additions
+        sudo apt-get install -y build-essential dkms linux-headers-$(uname -r)
+        sudo sh /mnt/VBoxLinuxAdditions.run || true
+        sudo umount /mnt
+
+        # Ensure GNOME and GDM3 are installed
+        sudo apt-get install -y ubuntu-desktop
+
+        # Reconfigure GDM3 to ensure it's set as the default display manager
+        echo "gdm3 shared/default-x-display-manager select gdm3" | sudo debconf-set-selections
+        sudo dpkg-reconfigure -f noninteractive gdm3
+
+        sudo apt-get update
+        sudo mount -a #mounts vagrantfilefolder as a storage as well, mnt point  is in cd ../vagrant folder
+        sudo reboot
       SHELL
     end
   end
 end
-
