@@ -38,7 +38,7 @@ Vagrant.configure("2") do |config|
         ##set User Variable
         #------------------------create additional user and password------------------------------------------------------------------
         USER = "ubuntu" #Change to name
-        PASSWORD = "ubuntu" #Chnage to your password
+        PASSWORD = "ubuntu" #Change to your password
         SSH_PRIVATE_KEY = "ssh-rsa AAAAB3NzaC1yghduisuoUGUIGUIF"  #Copy your own SSH key here or leave b;ank if you dont want ssh access
         #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -60,20 +60,10 @@ Vagrant.configure("2") do |config|
 
 
         # Update and install necessary packages
-
+        
         sudo apt-get update && sudo apt-get install -y openssh-server apache2 curl
 
-        # Install Docker
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-        sudo apt-get update && sudo apt-get install -y docker-ce
-
-        # Install Kubernetes CLI
-        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-        echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-        sudo apt-get update && sudo apt-get install -y kubectl
-
-        
+              
         # Setup SSH keys for '$USER'
         sudo mkdir -p /home/$USER/.ssh
         sudo chmod 700 /home/$USER/.ssh
@@ -83,10 +73,8 @@ Vagrant.configure("2") do |config|
         # Dynamically set the hostname to the IP address
         sudo hostnamectl set-hostname #{ip_address}
 
-        # Additional installations for the first VM
-        if [ "#{i}" = "1" ]; then
-          sudo apt-get install -y ansible terraform vagrant
-        fi
+        sudo apt-get install -y ubuntu-desktop
+        sudo reboot
       SHELL
     end
   end
