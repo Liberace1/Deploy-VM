@@ -1,4 +1,7 @@
 
+### Note(SSH)
+* Change ssh keys in script to yours before runnning script or comment the ssh line to avoid errors
+
 # Vagrant Environment Setup Guide
 
 This guide covers the setup of development environments using Vagrant with either Hyper-V or VirtualBox as the provider. Each environment configures multiple virtual machines (VMs) with Ubuntu, installs essential development tools, and sets up networking and SSH access.
