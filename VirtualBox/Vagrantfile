@@ -63,7 +63,7 @@ Vagrant.configure("2") do |config|
         #------------------------create additional user and password------------------------------------------------------------------
         USER="ola" # Change to preferred username
         PASSWORD="ola" # Change to your password
-        SSH_PRIVATE_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDPpG4shjevNpoxJxgIYbUQbzzMAY70gtiioI/eI5MCUoDuaMhoVi0s1dVQ87TTJTUQkL59GHzKrc3DMK9XohG3lCnRMfWaeYXKekNuCRAk6vDyN25tZmAnBaanVxGJRnN8GhYF2Larnt/8zcuO3OxI+RstUcmNsje8ZA0jGT9xQFq38WthLWUkISVDrA+YtDQ4avC8VLSFZlVC7vDiNPwng/zkltPfnsrbst8znDA9Qdy5k+lwwQkcEW/gpsUY3xC/afoPEZk0YzHUYHSn2y+d5ZiV6EUsgQoAq1usyPWOMIavRrU1FB/ytvvQ/y7HP9lTJQhT6gO1j/U3NUVe4ayXUWfIlx4n5VQis23K6FjtYCFqVF4HH8tgBgkuEUGSUnk7xhGYQYqqJdlXf9RSsZndXXRpK+v/xgPTlf2txr9Vv1bripfQGcSvraDlYxWsXZDON8zXkNL5QVvnl55R2XonsV1bYzE28VRanfqpjCppKgpb2Tk+HLNMUOU4cuyY5JnsNLOJaS0tJErbVsfGmwaTmQEzYWrDeyw7WL5+dHlqEeo1NQQGKuZtfqq/YPXwl4L2mYJfKOh8L2eHTEIvJkGA5xZttQ3ZZLB7M2+a7VweBWRs4OKIxrOgZ/aqxHUbTd1cJ5/FHaW74J+SaT1OvUHMK0qhCVdTyFPv1lA/zqZzTQ== olaliberace@gmail.com"
+        SSH_PRIVATE_KEY="ssh-rsa AAAAB3NzaC1yc2EAAA== olaliberace@gmail.com"
         # Copy your own SSH key here or leave blank if you don't want SSH access
         #-------------------------------------------------------------------------------------------------------------------------------
         # User setup for the variable $USER
